@@ -19,7 +19,14 @@ import java.time.LocalDate;
 class SimpleBatchJob {
 
     @Bean
-    public Step firstTasklet(StepBuilderFactory factory) {
+    public ExecutionContextPromotionListener promotionListener() {
+        final ExecutionContextPromotionListener listener = new ExecutionContextPromotionListener();
+        listener.setKeys(new String[] { "person" });
+        return listener;
+    }
+
+    @Bean
+    public Step firstTasklet(StepBuilderFactory factory, ExecutionContextPromotionListener promotionListener) {
         return factory
                 .get("firstTasklet")
                 .tasklet(((stepContribution, chunkContext) -> {
@@ -27,6 +34,7 @@ class SimpleBatchJob {
                     context.put("person", new Person("Pipo", "De Clown", LocalDate.now()));
                     return RepeatStatus.FINISHED;
                 }))
+                .listener(promotionListener)
                 .build();
     }
 
@@ -52,12 +60,5 @@ class SimpleBatchJob {
                 .next(secondTasklet)
                 .incrementer(new RunIdIncrementer())
                 .build();
-    }
-
-    @Bean
-    public ExecutionContextPromotionListener promotionListener() {
-        final ExecutionContextPromotionListener listener = new ExecutionContextPromotionListener();
-        listener.setKeys(new String[] { "person" });
-        return listener;
     }
 }
